@@ -1,8 +1,8 @@
 {
   "name": "dsh-web-restart",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
-  "description": "Adds a restart control to the dsh Web GUI that restarts the dsh web process and keeps it running as a detached background daemon.",
+  "description": "Adds restart and shutdown controls to the dsh Web GUI: the restart restarts the dsh web process and keeps it running as a detached background daemon, the shutdown stops that daemon and starts nothing in its place.",
   "type": "module",
   "exports": {
     ".": "./index.js",

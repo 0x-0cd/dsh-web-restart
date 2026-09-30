@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Web Restart",
-    "description": "Restart the dsh web process from the sidebar and keep it running as a background daemon."
+    "title": "Web Restart & Shutdown",
+    "description": "Restart or shut down the dsh web process from the sidebar: the restart keeps running as a background daemon, the shutdown ends it and starts nothing in its place."
   }
 }

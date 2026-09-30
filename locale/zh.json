@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Web 重启",
-    "description": "在侧边栏一键重启 dsh web 进程，并让它以后台守护方式继续运行。"
+    "title": "Web 重启与关闭",
+    "description": "在侧边栏一键重启或关闭 dsh web 进程：重启以后台守护方式继续运行，关闭则终止它且不启动替代进程。"
   }
 }

@@ -1,7 +1,7 @@
 /**
- * `dsh-web-restart` — Host half: two routes on the composition's `webServer`
+ * `dsh-web-restart` — Host half: three routes on the composition's `webServer`
  * that let the Web GUI restart this process and keep it running as a detached
- * background daemon.
+ * background daemon, or shut it down for good.
  *
  * Why this exists: after installing or updating a plugin — or editing
  * `$DSH_HOME/.env` — the running `dsh web` process still holds the previous
@@ -13,6 +13,8 @@
  * - `GET  /web-restart/status`  — what this process is and what a restart would run.
  * - `POST /web-restart/restart` — start the detached relauncher, answer the page,
  *   then shut this process down through the launcher's own graceful path.
+ * - `POST /web-restart/stop`    — answer the page and take that same graceful
+ *   path, starting nothing in its place: the process ends and stays ended.
  *
  * `relaunch.js` waits for this process to exit and then starts the replacement
  * in its own session, with stdin on `/dev/null` and stdout/stderr appended to a
@@ -60,6 +62,8 @@ export const inject = ['webServer', 'connection']
 const STATUS_PATH = '/web-restart/status'
 /** POST route: perform the restart. */
 const RESTART_PATH = '/web-restart/restart'
+/** POST route: end this process without starting a replacement. */
+const STOP_PATH = '/web-restart/stop'
 /** The detached helper that outlives this process and starts its replacement. */
 const RELAUNCH_SCRIPT = fileURLToPath(new URL('./relaunch.js', import.meta.url))
 /** Default daemon log inside the harness home. */
@@ -299,6 +303,7 @@ function statusOf(ctx, config, logFile, state) {
 		parent: process.ppid,
 		uptimeSeconds: Math.round(process.uptime()),
 		restarting: state.restarting,
+		stopping: state.stopping,
 		logFile,
 		supported: plan !== undefined,
 		source: plan?.source ?? null,
@@ -315,7 +320,7 @@ function statusOf(ctx, config, logFile, state) {
  */
 export function apply(ctx, config = {}) {
 	const logFile = logFileOf(ctx, config)
-	const state = { restarting: false }
+	const state = { restarting: false, stopping: false }
 
 	/* Create the log directory now: the restart route opens the log file for the
 	 * relauncher, and `openSync` is the only step there that needs the directory. */
@@ -407,11 +412,48 @@ export function apply(ctx, config = {}) {
 		},
 	}), `web-restart: POST ${RESTART_PATH}`)
 
-	/* Last on purpose: the record below is the one line that proves both route
-	 * registrations above ran, because `ctx.effect` invokes its callback now and a
+	ctx.effect(() => ctx.webServer.register({
+		kind: 'exact',
+		path: STOP_PATH,
+		handler: (req, res) => {
+			if (rejected(ctx, req, res)) return
+			if (req.method !== 'POST') {
+				sendMethodNotAllowed(res, 'POST')
+				return
+			}
+			/* A restart already in flight cannot be called off from here: its
+			 * relauncher is a separate process that is already waiting for this PID to
+			 * disappear, so a shutdown now would be undone a moment later. */
+			if (state.restarting) {
+				sendJson(res, 409, { ok: false, code: 'restart-in-progress', message: 'a restart is already in progress: its replacement is already committed' })
+				return
+			}
+			if (state.stopping) {
+				sendJson(res, 409, { ok: false, code: 'in-progress', message: 'a shutdown is already in progress' })
+				return
+			}
+			state.stopping = true
+			appendLog(logFile, `shutdown requested pid=${String(process.pid)} port=${String(ctx.webServer.port)} tty=${String(process.stdout.isTTY === true)}`)
+			sendJson(res, 200, { ok: true, pid: process.pid, port: ctx.webServer.port, logFile })
+			/* The same graceful path a restart takes — the launcher's own SIGTERM
+			 * handler disposes the application tree (bounded at 5s), which closes the
+			 * server and flushes session state — with nothing waiting to start a
+			 * replacement. The answer is already queued when this fires. */
+			setTimeout(() => {
+				try {
+					process.kill(process.pid, 'SIGTERM')
+				} catch {
+					process.exit(0)
+				}
+			}, RESPONSE_GRACE_MS)
+		},
+	}), `web-restart: POST ${STOP_PATH}`)
+
+	/* Last on purpose: the record below is the one line that proves every route
+	 * registration above ran, because `ctx.effect` invokes its callback now and a
 	 * throwing registration would abort this plugin's activation instead. */
 	ctx.effect(() => {
-		appendLog(logFile, `activated pid=${String(process.pid)} tty=${String(process.stdout.isTTY === true)} profile=${profileNameOf(ctx)} port=${String(ctx.webServer.port)} routes=${STATUS_PATH},${RESTART_PATH}`)
+		appendLog(logFile, `activated pid=${String(process.pid)} tty=${String(process.stdout.isTTY === true)} profile=${profileNameOf(ctx)} port=${String(ctx.webServer.port)} routes=${STATUS_PATH},${RESTART_PATH},${STOP_PATH}`)
 		return () => {}
 	}, 'web-restart: activation record')
 }
