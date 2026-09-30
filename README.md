@@ -55,7 +55,7 @@ dsh web --no-open --port 3080 --no-open --port 3080 ... （重复 9 遍）
 - argv 里若出现 `--` 分隔符，覆盖块插在它**前面**：`--` 之后是操作数，而 `dsh web` 不接受操作数，
   插在后面会让新进程直接起不来（commander 报 `too many arguments`），而不是改端口失败。
 
-回归测试：`node _smoke/restart-args-test.mjs`(仓库根目录；把规划出的命令行再喂回去做不动点迭代，并用 dsh 自带的 commander 真解析一遍）
+回归测试：`node _smoke/restart-args-test.mjs`（仓库根目录；把规划出的命令行再喂回去做不动点迭代，并用 dsh 自带的 commander 真解析一遍）
 和 `node _smoke/stop-route-test.mjs`（把 `process.kill` 换成记录器，验证关闭路由只对自己的 PID 发一次 `SIGTERM`、且在应答之后）。
 
 ## 日志
