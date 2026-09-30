@@ -1,46 +1,45 @@
 {
   "name": "dsh-web-restart",
-  "version": "0.1.0",
-  "description": "One-click restart button for the DeepSeek Harness Web UI: a sidebar footer button that restarts the dsh web process (single click, no confirmation step). / DSH Web 界面一键重启按钮：侧边栏底部按钮，单击即重启 dsh web 进程（无需二次确认）。",
-  "private": false,
+  "version": "0.1.1",
+  "private": true,
+  "description": "Adds a restart control to the dsh Web GUI that restarts the dsh web process and keeps it running as a detached background daemon.",
   "type": "module",
-  "main": "lib/index.js",
   "exports": {
-    ".": "./lib/index.js",
-    "./client": "./lib/client.js",
-    "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
   },
   "files": [
-    "lib",
+    "index.js",
+    "relaunch.js",
+    "client.js",
     "cordis.patch.yml",
-    "LICENSE",
-    "README.md",
-    "README.zh.md"
+    "icon.svg",
+    "locale/en.json",
+    "locale/zh.json",
+    "README.md"
   ],
+  "icon": "./icon.svg",
   "keywords": [
-    "deepseek",
-    "harness",
     "dsh",
     "dsh-plugin",
-    "web",
+    "deepseek-harness",
     "restart",
-    "ui"
+    "daemon"
   ],
   "license": "MIT",
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1"
-  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
     "client": {
+      "platform": "web",
+      "immediately": true,
       "inject": [
-        "@deepseek-ai/dsh-client-runtime",
-        "@deepseek-ai/dsh-client-ui-sidebar"
-      ],
-      "platform": "web"
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   }
 }

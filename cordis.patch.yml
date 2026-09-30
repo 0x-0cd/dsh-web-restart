@@ -1,7 +1,3 @@
-# dsh-web-restart — bundle patch: one plugin row loading both halves.
-# host half registers the POST /restart-dsh route; client half registers the
-# sidebar footer button. The row id stays `dsh-web-restart`; the client-module
-# graph id (package name) is `dsh-web-restart`.
 - insert:
-    - id: dsh-web-restart
+    - id: web-restart
       name: dsh-web-restart

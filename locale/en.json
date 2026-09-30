@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Web Restart",
+    "description": "Restart the dsh web process from the sidebar and keep it running as a background daemon."
+  }
+}

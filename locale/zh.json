@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Web 重启",
+    "description": "在侧边栏一键重启 dsh web 进程，并让它以后台守护方式继续运行。"
+  }
+}
